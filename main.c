@@ -40,8 +40,7 @@ void setup_clock(){
 
 void do_conversion(){
     // Wait acquisition time
-    // Calculate acquisition time
-    // __delay_ms()
+    __delay_us(5);
     GO_nDONE = 1;
 }
 
@@ -71,25 +70,33 @@ void setup_adc(){
     ADIE = 1;
 }
 
-char read_adc(){
+unsigned short char_to_short(char lo, char hi){
+    unsigned short num = (unsigned short) hi;
+    return (num << 8) + lo;
+}
+
+unsigned short read_adc(){
     char low = ADRESL;
     char high = ADRESH;
     clear_adc_flag();
+    return char_to_short(low, high);
 }
 
 void setup(){
     setup_clock();
-    ANSELC = 0;
-    TRISC0 = 0;
-    TRISC1 = 0;
-    TRISC2 = 1;
-    TRISC3 = 1;
-    TRISC4 = 1;
-    TRISC5 = 1;
+}
+
+void __interrupt() int_routine(void){
+    if(ADIF){
+        volatile unsigned short conversion = read_adc();
+        clear_adc_flag();
+    }
 }
 
 void main(void) {
     setup();
+    setup_adc();
+    do_conversion();
     while(1){
         PORTC = 3;
         __delay_ms(5000);
