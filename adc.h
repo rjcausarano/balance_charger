@@ -4,6 +4,8 @@
 
 #include <xc.h> // include processor files - each processor file is guarded.  
 
+unsigned short _vdd_mv = 0;
+
 void do_conversion(){
     // Wait acquisition time
     __delay_us(5);
@@ -14,7 +16,7 @@ void clear_adc_flag(){
     ADIF = 0;
 }
 
-void setup_adc(){
+void setup_adc(unsigned short vdd_mv){
     // Configure Port
     TRISA2 = 1;
     ANSA2 = 1;
@@ -34,18 +36,32 @@ void setup_adc(){
     GIE = 1;
     PEIE = 1;
     ADIE = 1;
+    _vdd_mv = vdd_mv;
 }
 
-unsigned short char_to_short(char lo, char hi){
+unsigned short chars_to_short(char hi, char lo){
     unsigned short num = (unsigned short) hi;
     return (num << 8) + lo;
+}
+
+void short_to_chars(unsigned short short_num, char chars[]){
+    chars[0] = (char)(0x00FF & short_num);
+    chars[1] = (char)(0x00FF & (short_num >> 8));
+}
+
+unsigned short counts_to_mv(unsigned short counts){
+    return (__uint24)5000 * counts / 1023;
+}
+
+unsigned short mv_to_counts(unsigned short millivolts){
+    return (__uint24)1023 * millivolts / 5000;
 }
 
 unsigned short read_adc(){
     char low = ADRESL;
     char high = ADRESH;
     clear_adc_flag();
-    return char_to_short(low, high);
+    return chars_to_short(high, low);
 }
 
 #endif	/* ADC_H */

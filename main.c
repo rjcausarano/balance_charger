@@ -39,7 +39,7 @@ void setup_clock(char freq){
 
 void setup(){
     setup_clock(0b1111);
-    setup_adc();
+    setup_adc(5000);
     setup_mux();
 }
 
@@ -50,17 +50,9 @@ void __interrupt() int_routine(void){
     }
 }
 
-void main(void) {
+int main(void) {
     setup();
-    inhibit_output(1);
-    do_conversion();
-    channel_select(0);
-    channel_select(1);
-    channel_select(2);
-    channel_select(3);
-    channel_select(4);
-    channel_select(5);
-    channel_select(6);
-    channel_select(7);
-    inhibit_output(0);
+    volatile unsigned short counts = mv_to_counts(2996);
+    volatile unsigned short millivolts = counts_to_mv(counts);
+    while(1){}
 }
