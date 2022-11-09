@@ -30,60 +30,17 @@
 #define _XTAL_FREQ 16000000
 
 #include <xc.h>
+#include "adc.h"
+#include "mux.h"
 
-void setup_clock(){
-    IRCF3 = 1;
-    IRCF2 = 1;
-    IRCF1 = 1;
-    IRCF0 = 1;
-}
-
-void do_conversion(){
-    // Wait acquisition time
-    __delay_us(5);
-    GO_nDONE = 1;
-}
-
-void clear_adc_flag(){
-    ADIF = 0;
-}
-
-void setup_adc(){
-    // Configure Port
-    TRISA0 = 1;
-    ANSA0 = 1;
-    // Configure Clock
-    ADCON1bits.ADCS = 0b110;
-    // Configure voltage reference
-    ADCON1bits.ADPREF = 0;
-    ADCON1bits.ADNREF = 0;
-    // Channel select
-    ADCON0bits.CHS = 0b00010;
-    // Right justify result
-    ADFM = 1;
-    // Turn on ADC
-    ADON = 1;
-    // Configure interrupt
-    clear_adc_flag();
-    GIE = 1;
-    PEIE = 1;
-    ADIE = 1;
-}
-
-unsigned short char_to_short(char lo, char hi){
-    unsigned short num = (unsigned short) hi;
-    return (num << 8) + lo;
-}
-
-unsigned short read_adc(){
-    char low = ADRESL;
-    char high = ADRESH;
-    clear_adc_flag();
-    return char_to_short(low, high);
+void setup_clock(char freq){
+    OSCCONbits.IRCF = freq;
 }
 
 void setup(){
-    setup_clock();
+    setup_clock(0b1111);
+    setup_adc();
+    setup_mux();
 }
 
 void __interrupt() int_routine(void){
@@ -95,12 +52,15 @@ void __interrupt() int_routine(void){
 
 void main(void) {
     setup();
-    setup_adc();
+    inhibit_output(1);
     do_conversion();
-    while(1){
-        PORTC = 3;
-        __delay_ms(5000);
-        PORTC = 0;
-        __delay_ms(5000);
-    }
+    channel_select(0);
+    channel_select(1);
+    channel_select(2);
+    channel_select(3);
+    channel_select(4);
+    channel_select(5);
+    channel_select(6);
+    channel_select(7);
+    inhibit_output(0);
 }
