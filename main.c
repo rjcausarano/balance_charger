@@ -32,6 +32,7 @@
 #include <xc.h>
 #include "adc.h"
 #include "mux.h"
+#include "balance.h"
 
 void setup_clock(char freq){
     OSCCONbits.IRCF = freq;
@@ -41,6 +42,7 @@ void setup(){
     setup_clock(0b1111);
     setup_adc(5000);
     setup_mux();
+    setup_balance();
 }
 
 void __interrupt() int_routine(void){
@@ -52,7 +54,5 @@ void __interrupt() int_routine(void){
 
 int main(void) {
     setup();
-    volatile unsigned short counts = mv_to_counts(2996);
-    volatile unsigned short millivolts = counts_to_mv(counts);
     while(1){}
 }

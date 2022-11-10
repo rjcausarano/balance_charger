@@ -7,7 +7,10 @@
 
 void setup_mux(){
     // Make these pins digital
-    ANSELC = 0b11110000;
+    ANSC0 = 0;
+    ANSC1 = 0;
+    ANSC2 = 0;
+    ANSC3 = 0;
     // RC0 to RC2 are channel select outputs
     TRISC0 = 0;
     TRISC1 = 0;
