@@ -28,14 +28,37 @@
 // Use project enums instead of #define for ON and OFF.
 
 #define _XTAL_FREQ 16000000
+#define _SLAVE_ADDRESS 8
+#define VOLTAGE_READ_OFFSET 0
 
 #include <xc.h>
 #include "adc.h"
 #include "mux.h"
 #include "balance.h"
+#include "pic_libs/i2c.h"
+
+char i2c_test_val = 0;
 
 void setup_clock(char freq){
     OSCCONbits.IRCF = freq;
+}
+
+char on_byte_read(char offset){
+    unsigned char ret = 0xFF;
+    switch(offset){
+        case VOLTAGE_READ_OFFSET:
+            ret = i2c_test_val;
+            break;
+    }
+    return ret;
+}
+
+void on_byte_write(char offset, char byte){
+    switch(offset){
+        case VOLTAGE_READ_OFFSET:
+            i2c_test_val = byte;
+            break;
+    }
 }
 
 void setup(){
@@ -43,10 +66,13 @@ void setup(){
     setup_adc(5000);
     setup_mux();
     setup_balance();
+    setup_i2c(0, _SLAVE_ADDRESS, on_byte_write, on_byte_read);
 }
 
 void __interrupt() int_routine(void){
-    if(ADIF){
+    if(SSPIF){ // received data through i2c
+        process_interrupt_i2c();
+    } else if(ADIF){
         volatile unsigned short conversion = read_adc();
         clear_adc_flag();
     }
