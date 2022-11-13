@@ -33,6 +33,8 @@
 #define CELL_2 1
 #define CELL_3 2
 #define CURRENT 3
+#define VOLTAGE_READ_OFFSET 4
+#define VOLTAGE_READ_OFFSET1 5
 
 #include <xc.h>
 #include "adc.h"
@@ -41,45 +43,76 @@
 #include "pic_libs/i2c.h"
 
 unsigned short cell_1_v = 0, cell_2_v = 0, cell_3_v = 0, current = 0;
+unsigned short i2c_test_val = 0, i2c_test_val1;
 
 void setup_clock(char freq){
     OSCCONbits.IRCF = freq;
 }
 
-char on_byte_read(char offset){
-    unsigned char ret = 0xFF;
+void on_read_data(char offset, char data[]){
+    char data_chars[2] = {0};
     switch(offset){
         case CELL_1:
-            ret = cell_1_v;
+            short_to_chars(cell_1_v, data_chars);
+            data[0] = data_chars[0];
+            data[1] = data_chars[1];
             break;
         case CELL_2:
-            ret = cell_2_v;
+            short_to_chars(cell_2_v, data_chars);
+            data[0] = data_chars[0];
+            data[1] = data_chars[1];
             break;
         case CELL_3:
-            ret = cell_3_v;
+            short_to_chars(cell_3_v, data_chars);
+            data[0] = data_chars[0];
+            data[1] = data_chars[1];
             break;
         case CURRENT:
-            ret = current;
+            short_to_chars(current, data_chars);
+            data[0] = data_chars[0];
+            data[1] = data_chars[1];
+            break;
+        case VOLTAGE_READ_OFFSET:
+            short_to_chars(i2c_test_val, data_chars);
+            data[0] = data_chars[0];
+            data[1] = data_chars[1];
+            break;
+        case VOLTAGE_READ_OFFSET1:
+            short_to_chars(i2c_test_val1, data_chars);
+            data[0] = data_chars[0];
+            data[1] = data_chars[1];
             break;
     }
-    return ret;
 }
 
-void on_byte_write(char offset, char byte){
+void on_write_data(char offset, char data[]){
+    unsigned short data_short = chars_to_short(data[1], data[0]);
     switch(offset){
         case CELL_1:
-            cell_1_v = byte;
+            cell_1_v = data_short;
             break;
         case CELL_2:
-            cell_2_v = byte;
+            cell_2_v = data_short;
             break;
         case CELL_3:
-            cell_3_v = byte;
+            cell_3_v = data_short;
             break;
         case CURRENT:
-            current = byte;
+            current = data_short;
+            break;
+        case VOLTAGE_READ_OFFSET:
+            i2c_test_val = data_short;
+            break;
+        case VOLTAGE_READ_OFFSET1:
+            i2c_test_val1 = data_short;
             break;
     }
+}
+
+void on_end(char data[]){
+    volatile char hi = data[0];
+    volatile char lo = data[1];
+    volatile unsigned short data_short = chars_to_short(hi, lo);
 }
 
 void setup(){
@@ -87,7 +120,7 @@ void setup(){
     setup_adc(5000);
     setup_mux();
     setup_balance();
-    setup_i2c(0, _SLAVE_ADDRESS, on_byte_write, on_byte_read);
+    setup_i2c(0, _SLAVE_ADDRESS, on_write_data, on_read_data);
 }
 
 void __interrupt() int_routine(void){
