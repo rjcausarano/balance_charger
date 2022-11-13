@@ -38,32 +38,36 @@
 #include "balance.h"
 #include "pic_libs/i2c.h"
 
-char i2c_test_val = 0, i2c_test_val1;
+unsigned short i2c_test_val = 0, i2c_test_val1;
 
 void setup_clock(char freq){
     OSCCONbits.IRCF = freq;
 }
 
-char on_read_data(char offset, char data[]){
-    unsigned char ret = 0xFF;
+void on_read_data(char offset, char data[]){
+    char data_chars[2] = {0};
     switch(offset){
         case VOLTAGE_READ_OFFSET:
-            ret = i2c_test_val;
+            short_to_chars(i2c_test_val, data_chars);
+            data[0] = data_chars[0];
+            data[1] = data_chars[1];
             break;
         case VOLTAGE_READ_OFFSET1:
-            ret = i2c_test_val1;
+            short_to_chars(i2c_test_val1, data_chars);
+            data[0] = data_chars[0];
+            data[1] = data_chars[1];
             break;
     }
-    return ret;
 }
 
 void on_write_data(char offset, char data[]){
+    unsigned short data_short = chars_to_short(data[1], data[0]);
     switch(offset){
         case VOLTAGE_READ_OFFSET:
-            i2c_test_val = data[0];
+            i2c_test_val = data_short;
             break;
         case VOLTAGE_READ_OFFSET1:
-            i2c_test_val1 = data[1];
+            i2c_test_val1 = data_short;
             break;
     }
 }
