@@ -30,6 +30,7 @@
 #define _XTAL_FREQ 16000000
 #define _SLAVE_ADDRESS 8
 #define VOLTAGE_READ_OFFSET 0
+#define VOLTAGE_READ_OFFSET1 1
 
 #include <xc.h>
 #include "adc.h"
@@ -37,7 +38,7 @@
 #include "balance.h"
 #include "pic_libs/i2c.h"
 
-char i2c_test_val = 0;
+char i2c_test_val = 0, i2c_test_val1;
 
 void setup_clock(char freq){
     OSCCONbits.IRCF = freq;
@@ -49,6 +50,9 @@ char on_byte_read(char offset){
         case VOLTAGE_READ_OFFSET:
             ret = i2c_test_val;
             break;
+        case VOLTAGE_READ_OFFSET1:
+            ret = i2c_test_val1;
+            break;
     }
     return ret;
 }
@@ -58,7 +62,16 @@ void on_byte_write(char offset, char byte){
         case VOLTAGE_READ_OFFSET:
             i2c_test_val = byte;
             break;
+        case VOLTAGE_READ_OFFSET1:
+            i2c_test_val1 = byte;
+            break;
     }
+}
+
+void on_end(char data[]){
+    volatile char hi = data[0];
+    volatile char lo = data[1];
+    volatile unsigned short data_short = chars_to_short(hi, lo);
 }
 
 void setup(){
@@ -66,7 +79,7 @@ void setup(){
     setup_adc(5000);
     setup_mux();
     setup_balance();
-    setup_i2c(0, _SLAVE_ADDRESS, on_byte_write, on_byte_read);
+    setup_i2c(0, _SLAVE_ADDRESS, on_byte_write, on_byte_read, on_end);
 }
 
 void __interrupt() int_routine(void){
