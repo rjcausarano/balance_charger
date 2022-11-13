@@ -33,8 +33,6 @@
 #define CELL_2 1
 #define CELL_3 2
 #define CURRENT 3
-#define VOLTAGE_READ_OFFSET 4
-#define VOLTAGE_READ_OFFSET1 5
 
 #include <xc.h>
 #include "adc.h"
@@ -43,7 +41,6 @@
 #include "pic_libs/i2c.h"
 
 unsigned short cell_1_v = 0, cell_2_v = 0, cell_3_v = 0, current = 0;
-unsigned short i2c_test_val = 0, i2c_test_val1;
 
 void setup_clock(char freq){
     OSCCONbits.IRCF = freq;
@@ -51,6 +48,7 @@ void setup_clock(char freq){
 
 void on_read_data(char offset, char data[]){
     char data_chars[2] = {0};
+    data_chars[0]++;
     switch(offset){
         case CELL_1:
             short_to_chars(cell_1_v, data_chars);
@@ -72,16 +70,6 @@ void on_read_data(char offset, char data[]){
             data[0] = data_chars[0];
             data[1] = data_chars[1];
             break;
-        case VOLTAGE_READ_OFFSET:
-            short_to_chars(i2c_test_val, data_chars);
-            data[0] = data_chars[0];
-            data[1] = data_chars[1];
-            break;
-        case VOLTAGE_READ_OFFSET1:
-            short_to_chars(i2c_test_val1, data_chars);
-            data[0] = data_chars[0];
-            data[1] = data_chars[1];
-            break;
     }
 }
 
@@ -100,19 +88,7 @@ void on_write_data(char offset, char data[]){
         case CURRENT:
             current = data_short;
             break;
-        case VOLTAGE_READ_OFFSET:
-            i2c_test_val = data_short;
-            break;
-        case VOLTAGE_READ_OFFSET1:
-            i2c_test_val1 = data_short;
-            break;
     }
-}
-
-void on_end(char data[]){
-    volatile char hi = data[0];
-    volatile char lo = data[1];
-    volatile unsigned short data_short = chars_to_short(hi, lo);
 }
 
 void setup(){
