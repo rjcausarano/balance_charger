@@ -48,7 +48,6 @@ void setup_clock(char freq){
 
 void on_read_data(char offset, char data[]){
     char data_chars[2] = {0};
-    data_chars[0]++;
     switch(offset){
         case CELL_1:
             short_to_chars(cell_1_v, data_chars);
@@ -70,6 +69,9 @@ void on_read_data(char offset, char data[]){
             data[0] = data_chars[0];
             data[1] = data_chars[1];
             break;
+        default:
+            data[0] = 0;
+            data[1] = 0;
     }
 }
 
