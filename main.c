@@ -44,7 +44,7 @@ void setup_clock(char freq){
     OSCCONbits.IRCF = freq;
 }
 
-char on_byte_read(char offset){
+char on_read_data(char offset, char data[]){
     unsigned char ret = 0xFF;
     switch(offset){
         case VOLTAGE_READ_OFFSET:
@@ -57,13 +57,13 @@ char on_byte_read(char offset){
     return ret;
 }
 
-void on_byte_write(char offset, char byte){
+void on_write_data(char offset, char data[]){
     switch(offset){
         case VOLTAGE_READ_OFFSET:
-            i2c_test_val = byte;
+            i2c_test_val = data[0];
             break;
         case VOLTAGE_READ_OFFSET1:
-            i2c_test_val1 = byte;
+            i2c_test_val1 = data[1];
             break;
     }
 }
@@ -79,7 +79,7 @@ void setup(){
     setup_adc(5000);
     setup_mux();
     setup_balance();
-    setup_i2c(0, _SLAVE_ADDRESS, on_byte_write, on_byte_read, on_end);
+    setup_i2c(0, _SLAVE_ADDRESS, on_write_data, on_read_data);
 }
 
 void __interrupt() int_routine(void){
