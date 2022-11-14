@@ -20,7 +20,7 @@ void setup_mux(){
 }
 
 void channel_select(char channel){
-    volatile char mask = 0b00000111;
+    char mask = 0b00000111;
     PORTC = (PORTC & ~mask) | (channel & mask);
 }
 

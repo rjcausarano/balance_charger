@@ -29,10 +29,12 @@
 
 #define _XTAL_FREQ 16000000
 #define _SLAVE_ADDRESS 8
-#define CELL_1 0
-#define CELL_2 1
-#define CELL_3 2
+#define CELL_0 0
+#define CELL_1 1
+#define CELL_2 2
 #define CURRENT 3
+#define CELL_BALANCE 4
+#define CELL_MEASURE 5
 
 #include <xc.h>
 #include "adc.h"
@@ -40,7 +42,9 @@
 #include "balance.h"
 #include "pic_libs/i2c.h"
 
-unsigned short cell_1_v = 0, cell_2_v = 0, cell_3_v = 0, current = 0;
+// Battery status [cell_1_mv, cell_2_mv, cell_3_mv, current_ma]
+unsigned short battery_status[4] = {0};
+char selected_cell = 0;
 
 void setup_clock(char freq){
     OSCCONbits.IRCF = freq;
@@ -49,46 +53,45 @@ void setup_clock(char freq){
 void on_read_data(char offset, char data[]){
     char data_chars[2] = {0};
     switch(offset){
+        case CELL_0:
+            short_to_chars(battery_status[0], data_chars);
+            data[0] = data_chars[0];
+            data[1] = data_chars[1];
+            break;
         case CELL_1:
-            short_to_chars(cell_1_v, data_chars);
+            short_to_chars(battery_status[1], data_chars);
             data[0] = data_chars[0];
             data[1] = data_chars[1];
             break;
         case CELL_2:
-            short_to_chars(cell_2_v, data_chars);
-            data[0] = data_chars[0];
-            data[1] = data_chars[1];
-            break;
-        case CELL_3:
-            short_to_chars(cell_3_v, data_chars);
+            short_to_chars(battery_status[2], data_chars);
             data[0] = data_chars[0];
             data[1] = data_chars[1];
             break;
         case CURRENT:
-            short_to_chars(current, data_chars);
+            short_to_chars(battery_status[3], data_chars);
             data[0] = data_chars[0];
             data[1] = data_chars[1];
             break;
         default:
-            data[0] = 0;
-            data[1] = 0;
+            data[0] = 0xff;
+            data[1] = 0xff;
     }
 }
 
 void on_write_data(char offset, char data[]){
-    unsigned short data_short = chars_to_short(data[1], data[0]);
     switch(offset){
-        case CELL_1:
-            cell_1_v = data_short;
+        case CELL_BALANCE:
             break;
-        case CELL_2:
-            cell_2_v = data_short;
-            break;
-        case CELL_3:
-            cell_3_v = data_short;
-            break;
-        case CURRENT:
-            current = data_short;
+        case CELL_MEASURE:
+            // If ADC is busy or if the selected channel is out of range, return
+            if(is_converting() || data[0] > 2){
+                return;
+            }
+            selected_cell = data[0];
+            channel_select(selected_cell);
+            inhibit_output(0);
+            do_conversion();
             break;
     }
 }
@@ -105,12 +108,12 @@ void __interrupt() int_routine(void){
     if(SSPIF){ // received data through i2c
         process_interrupt_i2c();
     } else if(ADIF){
-        volatile unsigned short conversion = read_adc();
-        clear_adc_flag();
+        battery_status[selected_cell] = get_adc_voltage();
     }
 }
 
 int main(void) {
     setup();
+    inhibit_output(1);
     while(1){}
 }
