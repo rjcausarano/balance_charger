@@ -10,13 +10,11 @@ void setup_mux(){
     ANSC0 = 0;
     ANSC1 = 0;
     ANSC2 = 0;
-    ANSC3 = 0;
-    // RC0 to RC2 are channel select outputs
+    // RC0 and RC1 are channel select outputs
     TRISC0 = 0;
     TRISC1 = 0;
+    // RC2 is inhibit
     TRISC2 = 0;
-    // RC3 is inhibit
-    TRISC3 = 0;
 }
 
 void channel_select(char channel){
@@ -25,7 +23,7 @@ void channel_select(char channel){
 }
 
 void inhibit_output(char inhibit){
-    RC3 = (__bit)inhibit;
+    RC2 = (__bit)inhibit;
 }
 
 #endif	/* MUX_H */

@@ -29,10 +29,7 @@
 
 #define _XTAL_FREQ 16000000
 #define _SLAVE_ADDRESS 8
-#define CELL_0 0
-#define CELL_1 1
-#define CELL_2 2
-#define CURRENT 3
+// Offsets 0 - 3 reserved for reading battery status
 #define CELL_BALANCE 4
 #define CELL_MEASURE 5
 
@@ -52,30 +49,15 @@ void setup_clock(char freq){
 
 void on_read_data(char offset, char data[]){
     char data_chars[2] = {0};
-    switch(offset){
-        case CELL_0:
-            short_to_chars(battery_status[0], data_chars);
-            data[0] = data_chars[0];
-            data[1] = data_chars[1];
-            break;
-        case CELL_1:
-            short_to_chars(battery_status[1], data_chars);
-            data[0] = data_chars[0];
-            data[1] = data_chars[1];
-            break;
-        case CELL_2:
-            short_to_chars(battery_status[2], data_chars);
-            data[0] = data_chars[0];
-            data[1] = data_chars[1];
-            break;
-        case CURRENT:
-            short_to_chars(battery_status[3], data_chars);
-            data[0] = data_chars[0];
-            data[1] = data_chars[1];
-            break;
-        default:
-            data[0] = 0xff;
-            data[1] = 0xff;
+    // offsets 0 - 3 are battery status
+    if(offset >= 0 && offset <= 3){
+        short_to_chars(battery_status[offset], data_chars);
+        data[0] = data_chars[0];
+        data[1] = data_chars[1];
+    }
+    else {
+        data[0] = 0xff;
+        data[1] = 0xff;
     }
 }
 
@@ -90,7 +72,7 @@ void on_write_data(char offset, char data[]){
             }
             selected_cell = data[0];
             channel_select(selected_cell);
-            inhibit_output(0);
+//            inhibit_output(0);
             do_conversion();
             break;
     }
@@ -114,6 +96,7 @@ void __interrupt() int_routine(void){
 
 int main(void) {
     setup();
-    inhibit_output(1);
+//    inhibit_output(1);
+    inhibit_output(0);
     while(1){}
 }
