@@ -31,22 +31,21 @@
 #define _XTAL_FREQ 16000000
 
 #include <xc.h>
-
-void setup_port(){
-    ANSELB = 0b10111111;
-    TRISB6 = 0;
-}
+#include "mux.h"
 
 void setup_clock(){
     OSCCONbits.IRCF = 0b1111;
 }
 
 void main(void) {
-    setup_port();
     setup_clock();
+    setup_mux();
+    channel_select(1);
+    char inhibit = 1;
     while(1){
-        __delay_ms(5000);
-        RB6 = !RB6;
+        inhibit = !inhibit;
+        inhibit_output(inhibit);
+        __delay_ms(1000);
     }
     return;
 }
