@@ -32,20 +32,26 @@
 
 #include <xc.h>
 #include "mux.h"
+#include "adc.h"
 
 void setup_clock(){
     OSCCONbits.IRCF = 0b1111;
 }
 
+volatile unsigned short voltage = 0;
+void __interrupt() int_routine(void){
+    if(ADIF){
+        voltage = get_adc_voltage();
+    }
+}
+
 void main(void) {
     setup_clock();
     setup_mux();
-    channel_select(1);
-    char inhibit = 1;
+    setup_adc(5000);
+    do_conversion();
     while(1){
-        inhibit = !inhibit;
-        inhibit_output(inhibit);
-        __delay_ms(1000);
+
     }
     return;
 }

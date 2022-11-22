@@ -24,15 +24,15 @@ char is_converting(){
 
 void setup_adc(unsigned short vdd_mv){
     // Configure Port
-    TRISA2 = 1;
-    ANSA2 = 1;
+    TRISC2 = 1;
+    ANSC2 = 1;
     // Configure Clock
     ADCON1bits.ADCS = 0b110;
     // Configure voltage reference
     ADCON1bits.ADPREF = 0;
-    ADCON1bits.ADNREF = 0;
+    //ADCON1bits.ADNREF = 0;
     // Channel select
-    ADCON0bits.CHS = 0b00010;
+    ADCON0bits.CHS = 0b00110;
     // Right justify result
     ADFM = 1;
     // Turn on ADC
