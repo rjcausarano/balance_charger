@@ -6,30 +6,32 @@
 #include <xc.h> // include processor files - each processor file is guarded.
 
 void setup_mux(){
-    // Will use RB4, RB5 and RB6
+    // Will use RA5, RA4 and RB5
     // Make these pins digital
-    char change_mask = 0b01110000;
+    char change_mask = 0b00100000;
     ANSELB = (ANSELB & ~change_mask) | 0b00000000;
-    // RB4 and RB5 are channel select outputs
-    TRISB4 = 0;
+    change_mask = 0b00110000;
+    ANSELA = (ANSELA & ~change_mask) | 0b00000000;
+    // RA4 and RA5 are channel select outputs
+    TRISA4 = 0;
+    TRISA5 = 0;
+    // RB5 is inhibit
     TRISB5 = 0;
-    // RB6 is inhibit
-    TRISB6 = 0;
     // use weak pull ups
-    WPUB4 = 1;
+    WPUA4 = 1;
+    WPUA5 = 1;
     WPUB5 = 1;
-    WPUB6 = 1;
 }
 
 void channel_select(char channel){
     if(channel > 3) return;
     char change_mask = 0b00110000;
     channel = (char) (channel << 4);
-    PORTB = (PORTB & ~change_mask) | (channel & change_mask);
+    PORTA = (PORTA & ~change_mask) | (channel & change_mask);
 }
 
 void inhibit_output(char inhibit){
-    RB6 = (__bit)inhibit;
+    RB5 = (__bit)inhibit;
 }
 
 #endif	/* MUX_H */

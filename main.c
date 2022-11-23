@@ -33,6 +33,7 @@
 #include <xc.h>
 #include "mux.h"
 #include "adc.h"
+#include "pic_libs/i2c.h"
 
 void setup_clock(){
     OSCCONbits.IRCF = 0b1111;
@@ -49,7 +50,6 @@ void main(void) {
     setup_clock();
     setup_mux();
     setup_adc(5000);
-    do_conversion();
     while(1){
 
     }
