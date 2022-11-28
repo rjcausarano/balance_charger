@@ -29,19 +29,50 @@
 // Use project enums instead of #define for ON and OFF.
 
 #define _XTAL_FREQ 16000000
+#define _SLAVE_ADDRESS 8
+#define VOFFSET 0
 
 #include <xc.h>
 #include "mux.h"
 #include "adc.h"
 #include "pic_libs/i2c.h"
 
+volatile unsigned short voltage = 0;
+
 void setup_clock(){
     OSCCONbits.IRCF = 0b1111;
 }
 
-volatile unsigned short voltage = 0;
+void setup_icsp_pins(){
+    
+}
+
+void on_read_data(char offset, char data[]){
+    char data_chars[2] = {0};
+    // offsets 0 - 3 are battery status
+    if(offset == VOFFSET){
+        short_to_chars(voltage, data_chars);
+        data[0] = data_chars[0];
+        data[1] = data_chars[1];
+    }
+    else {
+        data[0] = 0xff;
+        data[1] = 0xff;
+    }
+}
+
+void on_write_data(char offset, char data[]){
+    switch(offset){
+        case VOFFSET:
+            voltage = chars_to_short(data[1], data[0]);
+            break;
+    }
+}
+
 void __interrupt() int_routine(void){
-    if(ADIF){
+    if(SSPIF){ // received data through i2c
+        process_interrupt_i2c();
+    } else if(ADIF){
         voltage = get_adc_voltage();
     }
 }
@@ -50,8 +81,8 @@ void main(void) {
     setup_clock();
     setup_mux();
     setup_adc(5000);
+    setup_i2c(0, _SLAVE_ADDRESS, on_write_data, on_read_data);
     while(1){
-
     }
     return;
 }
