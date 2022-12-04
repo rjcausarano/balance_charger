@@ -82,7 +82,15 @@ void main(void) {
     setup_mux();
     setup_adc(5000);
     setup_i2c(0, _SLAVE_ADDRESS, on_write_data, on_read_data);
+    inhibit_output(0);
+    char channel = 0;
     while(1){
+        channel_select(channel);
+        channel++;
+        if(channel > 2){
+            channel = 0;
+        }
+        __delay_ms(5000);
     }
     return;
 }
