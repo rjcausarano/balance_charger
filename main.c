@@ -43,10 +43,6 @@ void setup_clock(){
     OSCCONbits.IRCF = 0b1111;
 }
 
-void setup_icsp_pins(){
-    
-}
-
 void on_read_data(char offset, char data[]){
     char data_chars[2] = {0};
     // offsets 0 - 3 are battery status
@@ -80,17 +76,14 @@ void __interrupt() int_routine(void){
 void main(void) {
     setup_clock();
     setup_mux();
-    setup_adc(5000);
+    setup_adc(4880);
     setup_i2c(0, _SLAVE_ADDRESS, on_write_data, on_read_data);
+    
+    channel_select(2);
     inhibit_output(0);
-    char channel = 0;
+    do_conversion();
     while(1){
-        channel_select(channel);
-        channel++;
-        if(channel > 2){
-            channel = 0;
-        }
-        __delay_ms(5000);
+        
     }
     return;
 }
