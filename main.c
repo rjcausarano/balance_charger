@@ -44,6 +44,23 @@
 unsigned short battery_status[4] = {0};
 char selected_cell = 0;
 
+void set_charge(char state){
+    RB7 = state;
+}
+
+char get_charge(){
+    return RB7;
+}
+
+void setup_charge(){
+    // Make RB7 digital
+    char change_mask = 0b10000000;
+    ANSELB = (ANSELB & ~change_mask) | 0b00000000;
+    TRISB7 = 0;
+    WPUB7 = 1;
+    set_charge(0);
+}
+
 void setup_clock(){
     OSCCONbits.IRCF = 0b1111;
 }
@@ -57,8 +74,15 @@ void on_read_data(char offset, char data[]){
         data[1] = data_chars[1];
     }
     else {
-        data[0] = 0xff;
-        data[1] = 0xff;
+        switch(offset){
+            case CHARGE:
+                data[0] = get_charge();
+                data[1] = 0x00;
+                break;
+            default:
+                data[0] = 0xff;
+                data[1] = 0xff;
+        }
     }
 }
 
@@ -77,6 +101,11 @@ void on_write_data(char offset, char data[]){
             do_conversion();
             break;
         case CHARGE:
+            // If state is > 1, return
+            if(data[0] > 1){
+                return;
+            }
+            set_charge(data[0]);
             break;
     }
 }
@@ -90,19 +119,6 @@ void __interrupt() int_routine(void){
     }
 }
 
-void set_charge(char state){
-    RB7 = state;
-}
-
-void setup_charge(){
-    // Make RB7 digital
-    char change_mask = 0b10000000;
-    ANSELB = (ANSELB & ~change_mask) | 0b00000000;
-    TRISB7 = 0;
-    WPUB7 = 1;
-    set_charge(0);
-}
-
 void setup(){
     setup_clock();
     setup_mux();
@@ -113,14 +129,7 @@ void setup(){
 
 void main(void) {
     setup();
-    
     inhibit_output(1);
-    
-    char charge = 0;
-    while(1){
-        charge = !charge;
-        set_charge(charge);
-        __delay_ms(5000);
-    }
+    while(1){}
     return;
 }
