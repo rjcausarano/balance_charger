@@ -30,14 +30,19 @@
 
 #define _XTAL_FREQ 16000000
 #define _SLAVE_ADDRESS 8
-#define VOFFSET 0
+// Offsets 0 - 3 reserved for reading battery status
+#define CELL_BALANCE 4
+#define CELL_MEASURE 5
+#define CHARGE 6
 
 #include <xc.h>
 #include "mux.h"
 #include "adc.h"
 #include "pic_libs/i2c.h"
 
-volatile unsigned short voltage = 0;
+// Battery status [cell_1_mv, cell_2_mv, cell_3_mv, current_ma]
+unsigned short battery_status[4] = {0};
+char selected_cell = 0;
 
 void setup_clock(){
     OSCCONbits.IRCF = 0b1111;
@@ -46,8 +51,8 @@ void setup_clock(){
 void on_read_data(char offset, char data[]){
     char data_chars[2] = {0};
     // offsets 0 - 3 are battery status
-    if(offset == VOFFSET){
-        short_to_chars(voltage, data_chars);
+    if(offset >= 0 && offset <= 3){
+        short_to_chars(battery_status[offset], data_chars);
         data[0] = data_chars[0];
         data[1] = data_chars[1];
     }
@@ -59,8 +64,19 @@ void on_read_data(char offset, char data[]){
 
 void on_write_data(char offset, char data[]){
     switch(offset){
-        case VOFFSET:
-            voltage = chars_to_short(data[1], data[0]);
+        case CELL_BALANCE:
+            break;
+        case CELL_MEASURE:
+            // If ADC is busy or if the selected channel is out of range, return
+            if(is_converting() || data[0] > 2){
+                return;
+            }
+            selected_cell = data[0];
+            channel_select(selected_cell);
+            inhibit_output(0);
+            do_conversion();
+            break;
+        case CHARGE:
             break;
     }
 }
@@ -69,21 +85,42 @@ void __interrupt() int_routine(void){
     if(SSPIF){ // received data through i2c
         process_interrupt_i2c();
     } else if(ADIF){
-        voltage = get_adc_voltage();
+        battery_status[selected_cell] = get_adc_voltage();
+        inhibit_output(1);
     }
 }
 
-void main(void) {
+void set_charge(char state){
+    RB7 = state;
+}
+
+void setup_charge(){
+    // Make RB7 digital
+    char change_mask = 0b10000000;
+    ANSELB = (ANSELB & ~change_mask) | 0b00000000;
+    TRISB7 = 0;
+    WPUB7 = 1;
+    set_charge(0);
+}
+
+void setup(){
     setup_clock();
     setup_mux();
     setup_adc(4880);
     setup_i2c(0, _SLAVE_ADDRESS, on_write_data, on_read_data);
+    setup_charge();
+}
+
+void main(void) {
+    setup();
     
-    channel_select(2);
-    inhibit_output(0);
-    do_conversion();
+    inhibit_output(1);
+    
+    char charge = 0;
     while(1){
-        
+        charge = !charge;
+        set_charge(charge);
+        __delay_ms(5000);
     }
     return;
 }
